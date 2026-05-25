@@ -40,7 +40,7 @@ def load_data():
     
     df = pd.DataFrame(data)
     
-    # Корреляции
+    # Корреляции для реалистичности
     df.loc[df['Genre'] == 'RPG', 'JP_Sales'] = df.loc[df['Genre'] == 'RPG', 'JP_Sales'] * 2.5
     df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] = df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] * 2
     df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] = df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] * 1.8
@@ -53,11 +53,12 @@ def load_data():
 df = load_data()
 
 # ============================================================
-# 2. ОТОБРАЖЕНИЕ ДАННЫХ
+# 2. ОТОБРАЖЕНИЕ ИСХОДНЫХ ДАННЫХ
 # ============================================================
 st.header("Исходные данные")
 st.markdown(f"**Размер данных:** {df.shape[0]} строк, {df.shape[1]} колонок")
 
+# Контрол 1: Выбор количества строк
 rows_to_show = st.selectbox("Количество строк:", [5, 10, 20, 50], index=1)
 st.dataframe(df.head(rows_to_show), use_container_width=True)
 
@@ -68,13 +69,18 @@ with st.expander("Информация о данных"):
     st.dataframe(df.describe())
 
 # ============================================================
-# 3. ФИЛЬТРЫ
+# 3. ФИЛЬТРЫ (3 контрола)
 # ============================================================
 st.sidebar.markdown("---")
 st.sidebar.header("Фильтры")
 
+# Контрол 2: Фильтр по годам
 selected_years = st.sidebar.multiselect("Год", sorted(df['Year'].unique()), default=[])
+
+# Контрол 3: Фильтр по платформам
 selected_platforms = st.sidebar.multiselect("Платформа", sorted(df['Platform'].unique()), default=[])
+
+# Контрол 4: Фильтр по жанрам
 selected_genres = st.sidebar.multiselect("Жанр", sorted(df['Genre'].unique()), default=[])
 
 filtered_df = df.copy()
@@ -102,11 +108,12 @@ col4.metric("Платформ", df['Platform'].nunique())
 col5.metric("Жанров", df['Genre'].nunique())
 
 # ============================================================
-# 5. ВИЗУАЛИЗАЦИИ
+# 5. ВИЗУАЛИЗАЦИЯ (5 типов графиков)
 # ============================================================
 st.markdown("---")
 st.header("Визуализация")
 
+# Контрол 5: Выбор типа графика
 chart_type = st.selectbox("Выберите график", [
     "Продажи по платформам",
     "Продажи по жанрам",
@@ -157,7 +164,7 @@ elif chart_type == "JP vs Global Sales":
 st.pyplot(fig)
 
 # ============================================================
-# 6. ПРОГНОЗ ПРОДАЖ В ЯПОНИИ
+# 6. ПРОГНОЗ ПРОДАЖ (интерактивный)
 # ============================================================
 st.markdown("---")
 st.header("Прогноз продаж в Японии")
@@ -169,18 +176,25 @@ st.markdown("""
 col1, col2 = st.columns(2)
 
 with col1:
+    # Контрол 6: Выбор платформы
     pred_platform = st.selectbox("Платформа", sorted(df['Platform'].unique()))
+    # Контрол 7: Выбор жанра
     pred_genre = st.selectbox("Жанр", sorted(df['Genre'].unique()))
+    # Контрол 8: Выбор издателя
     pred_publisher = st.selectbox("Издатель", sorted(df['Publisher'].unique()))
 
 with col2:
+    # Контрол 9: Год выпуска
     pred_year = st.number_input("Год выпуска", min_value=2000, max_value=2025, value=2024)
+    # Контрол 10: Продажи в NA
     pred_na = st.number_input("Продажи в NA (млн)", min_value=0.0, value=1.0, step=0.1)
+    # Контрол 11: Продажи в EU
     pred_eu = st.number_input("Продажи в EU (млн)", min_value=0.0, value=0.8, step=0.1)
+    # Контрол 12: Продажи в Other
     pred_other = st.number_input("Продажи в Other (млн)", min_value=0.0, value=0.3, step=0.1)
 
+# Контрол 13: Кнопка расчета прогноза
 if st.button("Рассчитать прогноз", type="primary"):
-    # Поиск похожих игр
     similar = df[
         (df['Platform'] == pred_platform) |
         (df['Genre'] == pred_genre) |
@@ -224,6 +238,7 @@ st.dataframe(top_games, use_container_width=True)
 st.markdown("---")
 st.header("Экспорт данных")
 
+# Контрол 14: Кнопка скачивания
 if st.button("Скачать отфильтрованные данные (CSV)"):
     csv = filtered_df.to_csv(index=False)
     st.download_button("Скачать CSV", csv, "filtered_data.csv", "text/csv")
