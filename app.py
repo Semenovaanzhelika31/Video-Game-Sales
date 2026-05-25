@@ -12,9 +12,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from io import BytesIO
 
-# ============================================================
-# НАСТРОЙКА СТРАНИЦЫ
-# ============================================================
 st.set_page_config(
     page_title="Анализ продаж видеоигр",
     page_icon=":video_game:",
@@ -26,13 +23,12 @@ st.title("Анализ и предсказание продаж видеоигр
 st.markdown("---")
 
 # ============================================================
-# 1. СОЗДАНИЕ ПРИМЕРА ДАННЫХ
+# 1. СОЗДАНИЕ ДАННЫХ С УЛУЧШЕННЫМИ КОРРЕЛЯЦИЯМИ
 # ============================================================
 @st.cache_data
 def load_data():
-    """Создание примера данных для демонстрации"""
     np.random.seed(42)
-    n_samples = 5000
+    n_samples = 10000
     
     platforms = ['PS4', 'Xbox One', 'PC', 'Nintendo Switch', 'PS5', 'PS3', 'Xbox 360', 'Wii', '3DS', 'PS Vita']
     genres = ['Action', 'Shooter', 'Sports', 'RPG', 'Adventure', 'Racing', 'Fighting', 'Platform', 'Simulation']
@@ -51,13 +47,25 @@ def load_data():
     }
     
     df = pd.DataFrame(data)
-    df['Global_Sales'] = df[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum(axis=1)
     
-    # Добавляем реалистичные корреляции
-    df.loc[df['Genre'] == 'RPG', 'JP_Sales'] = df.loc[df['Genre'] == 'RPG', 'JP_Sales'] * 2.0
-    df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] = df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] * 1.8
-    df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] = df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] * 1.5
-    df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] = df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] * 1.6
+    # Усиленные корреляции для JP_Sales
+    # RPG жанр дает в 3 раза больше продаж в Японии
+    df.loc[df['Genre'] == 'RPG', 'JP_Sales'] = df.loc[df['Genre'] == 'RPG', 'JP_Sales'] * 3.5
+    # Nintendo издатель дает в 2.5 раза больше
+    df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] = df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] * 2.8
+    # Nintendo Switch платформа дает в 2 раза больше
+    df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] = df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] * 2.2
+    # Platform жанр (платформеры) популярны в Японии
+    df.loc[df['Genre'] == 'Platform', 'JP_Sales'] = df.loc[df['Genre'] == 'Platform', 'JP_Sales'] * 1.8
+    
+    # Корреляции для NA_Sales (Северная Америка)
+    df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] = df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] * 2.0
+    df.loc[df['Genre'] == 'Sports', 'NA_Sales'] = df.loc[df['Genre'] == 'Sports', 'NA_Sales'] * 1.6
+    
+    # Корреляции для EU_Sales (Европа)
+    df.loc[df['Genre'] == 'Racing', 'EU_Sales'] = df.loc[df['Genre'] == 'Racing', 'EU_Sales'] * 1.8
+    
+    df['Global_Sales'] = df[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum(axis=1)
     
     for col in ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']:
         df[col] = df[col].round(2)
@@ -192,7 +200,7 @@ with st.spinner("Обучение модели..."):
     )
     
     if model_type == "Random Forest":
-        regressor = RandomForestRegressor(n_estimators=200, max_depth=15, random_state=42, n_jobs=-1)
+        regressor = RandomForestRegressor(n_estimators=300, max_depth=20, random_state=42, n_jobs=-1)
     else:
         regressor = LinearRegression()
     
