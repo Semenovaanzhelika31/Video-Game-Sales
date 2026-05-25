@@ -17,31 +17,29 @@ from io import BytesIO
 # ============================================================
 st.set_page_config(
     page_title="Анализ продаж видеоигр",
-    page_icon="🎮",
+    page_icon=":video_game:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("🎮 Анализ и предсказание продаж видеоигр")
+st.title("Анализ и предсказание продаж видеоигр")
 st.markdown("---")
 
 # ============================================================
-# 1. СОЗДАНИЕ ПРИМЕРА ДАННЫХ (ВСТРОЕННЫЕ ДАННЫЕ)
+# 1. СОЗДАНИЕ ПРИМЕРА ДАННЫХ
 # ============================================================
 @st.cache_data
 def load_data():
     """Создание примера данных для демонстрации"""
     np.random.seed(42)
-    n_samples = 2000
+    n_samples = 5000
     
-    # Категории
     platforms = ['PS4', 'Xbox One', 'PC', 'Nintendo Switch', 'PS5', 'PS3', 'Xbox 360', 'Wii', '3DS', 'PS Vita']
     genres = ['Action', 'Shooter', 'Sports', 'RPG', 'Adventure', 'Racing', 'Fighting', 'Platform', 'Simulation']
     publishers = ['Nintendo', 'EA', 'Ubisoft', 'Sony', 'Microsoft', 'Activision', 'Take-Two', 'Sega', 'Square Enix', 'Capcom']
     
-    # Создание данных
     data = {
-        'Name': [f'Игра_{i}' for i in range(1, n_samples + 1)],
+        'Name': [f'Game_{i}' for i in range(1, n_samples + 1)],
         'Platform': np.random.choice(platforms, n_samples),
         'Year': np.random.choice([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020], n_samples),
         'Genre': np.random.choice(genres, n_samples),
@@ -56,32 +54,28 @@ def load_data():
     df['Global_Sales'] = df[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']].sum(axis=1)
     
     # Добавляем реалистичные корреляции
-    # RPG популярнее в Японии
-    df.loc[df['Genre'] == 'RPG', 'JP_Sales'] = df.loc[df['Genre'] == 'RPG', 'JP_Sales'] * 1.5
-    # Nintendo популярна в Японии
-    df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] = df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] * 1.3
-    # Шутеры популярнее в Северной Америке
-    df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] = df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] * 1.4
+    df.loc[df['Genre'] == 'RPG', 'JP_Sales'] = df.loc[df['Genre'] == 'RPG', 'JP_Sales'] * 2.0
+    df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] = df.loc[df['Publisher'] == 'Nintendo', 'JP_Sales'] * 1.8
+    df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] = df.loc[df['Genre'] == 'Shooter', 'NA_Sales'] * 1.5
+    df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] = df.loc[df['Platform'] == 'Nintendo Switch', 'JP_Sales'] * 1.6
     
-    # Округление
     for col in ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']:
         df[col] = df[col].round(2)
     
     return df
 
-# Загрузка данных
 df = load_data()
 
 # ============================================================
 # 2. ОТОБРАЖЕНИЕ ДАННЫХ
 # ============================================================
-st.header("📊 Исходные данные")
+st.header("Исходные данные")
 st.markdown(f"**Размер данных:** {df.shape[0]} строк, {df.shape[1]} колонок")
 
 rows_to_show = st.selectbox("Количество строк для отображения:", [5, 10, 20, 50, 100], index=1)
 st.dataframe(df.head(rows_to_show), use_container_width=True)
 
-with st.expander("ℹ️ Информация о данных"):
+with st.expander("Информация о данных"):
     col1, col2 = st.columns(2)
     with col1:
         st.write("**Типы данных:**")
@@ -94,21 +88,17 @@ with st.expander("ℹ️ Информация о данных"):
 # 3. ФИЛЬТРЫ
 # ============================================================
 st.sidebar.markdown("---")
-st.sidebar.header("🔍 Фильтры")
+st.sidebar.header("Фильтры")
 
-# Фильтр по годам
 years = sorted(df['Year'].unique())
 selected_years = st.sidebar.multiselect("Год выпуска", years, default=years[:5] if len(years) > 5 else years)
 
-# Фильтр по платформам
 platforms = sorted(df['Platform'].unique())
 selected_platforms = st.sidebar.multiselect("Платформа", platforms, default=platforms[:5] if len(platforms) > 5 else platforms)
 
-# Фильтр по жанрам
 genres = sorted(df['Genre'].unique())
 selected_genres = st.sidebar.multiselect("Жанр", genres, default=genres[:5] if len(genres) > 5 else genres)
 
-# Фильтр по продажам
 min_sales = float(df['Global_Sales'].min())
 max_sales = float(df['Global_Sales'].max())
 sales_range = st.sidebar.slider(
@@ -118,7 +108,6 @@ sales_range = st.sidebar.slider(
     value=(min_sales, max_sales)
 )
 
-# Применение фильтров
 filtered_df = df.copy()
 if selected_years:
     filtered_df = filtered_df[filtered_df['Year'].isin(selected_years)]
@@ -129,13 +118,13 @@ if selected_genres:
 filtered_df = filtered_df[(filtered_df['Global_Sales'] >= sales_range[0]) & (filtered_df['Global_Sales'] <= sales_range[1])]
 
 st.sidebar.markdown("---")
-st.sidebar.metric("📊 Отфильтровано записей", len(filtered_df))
-st.sidebar.metric("🎮 Всего игр", len(df))
+st.sidebar.metric("Отфильтровано записей", len(filtered_df))
+st.sidebar.metric("Всего игр", len(df))
 
 # ============================================================
 # 4. КЛЮЧЕВЫЕ МЕТРИКИ
 # ============================================================
-st.header("📈 Ключевые метрики")
+st.header("Ключевые метрики")
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -154,7 +143,7 @@ with col5:
 # 5. ПРЕДСКАЗАНИЕ ПРОДАЖ В ЯПОНИИ
 # ============================================================
 st.markdown("---")
-st.header("🇯🇵 Предсказание продаж в Японии (JP_Sales)")
+st.header("Предсказание продаж в Японии (JP_Sales)")
 
 st.markdown("""
 **Что мы предсказываем:** Продажи игры в Японии (млн копий)
@@ -171,20 +160,17 @@ st.markdown("""
 **Почему это важно:** Японский рынок уникален - здесь RPG и игры Nintendo популярнее, чем в других регионах.
 """)
 
-# Выбор модели
 model_type = st.selectbox(
     "Выберите модель машинного обучения",
-    ["Random Forest (рекомендуется)", "Linear Regression"]
+    ["Random Forest", "Linear Regression"]
 )
 
 test_size = st.slider("Размер тестовой выборки", 0.1, 0.4, 0.2, 0.05)
 
-# Подготовка признаков
 feature_cols = ['Platform', 'Genre', 'Publisher', 'Year', 'NA_Sales', 'EU_Sales', 'Other_Sales']
 target_col = 'JP_Sales'
 
-with st.spinner("🔄 Обучение модели..."):
-    # Подготовка данных
+with st.spinner("Обучение модели..."):
     model_df = df[feature_cols + [target_col]].dropna()
     
     X = model_df[feature_cols]
@@ -192,11 +178,9 @@ with st.spinner("🔄 Обучение модели..."):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
     
-    # Определяем типы признаков
     numeric_features = ['Year', 'NA_Sales', 'EU_Sales', 'Other_Sales']
     categorical_features = ['Platform', 'Genre', 'Publisher']
     
-    # Pipeline для обработки данных
     numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
     categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))])
     
@@ -207,49 +191,44 @@ with st.spinner("🔄 Обучение модели..."):
         ]
     )
     
-    if model_type == "Random Forest (рекомендуется)":
-        regressor = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+    if model_type == "Random Forest":
+        regressor = RandomForestRegressor(n_estimators=200, max_depth=15, random_state=42, n_jobs=-1)
     else:
         regressor = LinearRegression()
     
     model = Pipeline(steps=[('preprocessor', preprocessor), ('regressor', regressor)])
     model.fit(X_train, y_train)
     
-    # Предсказания
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
     
-    # Метрики качества
     train_r2 = r2_score(y_train, y_pred_train)
     test_r2 = r2_score(y_test, y_pred_test)
     test_rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
     test_mae = mean_absolute_error(y_test, y_pred_test)
 
-# Отображение метрик
-st.subheader("📊 Качество модели")
+st.subheader("Качество модели")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("R² (обучение)", f"{train_r2:.3f}")
+    st.metric("R2 (обучение)", f"{train_r2:.3f}")
 with col2:
-    st.metric("R² (тест)", f"{test_r2:.3f}")
+    st.metric("R2 (тест)", f"{test_r2:.3f}")
 with col3:
     st.metric("RMSE", f"{test_rmse:.3f}M")
 with col4:
     st.metric("MAE", f"{test_mae:.3f}M")
 
-# График предсказаний
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.scatter(y_test, y_pred_test, alpha=0.5, color='blue')
 ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
 ax.set_xlabel('Реальные продажи в Японии (млн копий)')
 ax.set_ylabel('Предсказанные продажи (млн копий)')
-ax.set_title(f'Предсказание продаж в Японии\nR² = {test_r2:.3f}, RMSE = {test_rmse:.3f}M')
+ax.set_title(f'Предсказание продаж в Японии\nR2 = {test_r2:.3f}, RMSE = {test_rmse:.3f}M')
 st.pyplot(fig)
 
-# Важность признаков для Random Forest
 if "Random Forest" in model_type:
-    st.subheader("🔍 Важность признаков")
+    st.subheader("Важность признаков")
     
     rf_model = model.named_steps['regressor']
     ohe = model.named_steps['preprocessor'].named_transformers_['cat']
@@ -270,26 +249,11 @@ if "Random Forest" in model_type:
     ax.set_title('Топ-15 важных признаков для предсказания продаж в Японии')
     ax.invert_yaxis()
     st.pyplot(fig)
-else:
-    st.subheader("📈 Коэффициенты линейной регрессии")
-    
-    lr_model = model.named_steps['regressor']
-    ohe = model.named_steps['preprocessor'].named_transformers_['cat']
-    
-    feature_names = ohe.get_feature_names_out(categorical_features).tolist()
-    feature_names.extend(numeric_features)
-    
-    coef_df = pd.DataFrame({
-        'Признак': feature_names,
-        'Коэффициент': lr_model.coef_
-    }).sort_values('Коэффициент', ascending=False).head(15)
-    
-    st.dataframe(coef_df, use_container_width=True)
 
 # ============================================================
-# 6. ИНТЕРАКТИВНОЕ ПРЕДСКАЗАНИЕ ДЛЯ НОВОЙ ИГРЫ
+# 6. ИНТЕРАКТИВНОЕ ПРЕДСКАЗАНИЕ
 # ============================================================
-st.subheader("🎮 Предсказать продажи для новой игры")
+st.subheader("Предсказать продажи для новой игры")
 st.markdown("Введите параметры игры, чтобы получить предсказание продаж в Японии")
 
 col1, col2 = st.columns(2)
@@ -305,7 +269,7 @@ with col2:
     pred_eu_sales = st.number_input("Продажи в Европе (млн)", min_value=0.0, value=0.8, step=0.1)
     pred_other_sales = st.number_input("Продажи в остальном мире (млн)", min_value=0.0, value=0.3, step=0.1)
 
-if st.button("🔮 Предсказать продажи в Японии", type="primary"):
+if st.button("Предсказать продажи в Японии", type="primary"):
     input_data = pd.DataFrame({
         'Platform': [pred_platform],
         'Genre': [pred_genre],
@@ -319,16 +283,15 @@ if st.button("🔮 Предсказать продажи в Японии", type=
     prediction = model.predict(input_data)[0]
     
     st.markdown("---")
-    st.success(f"### 📊 Прогноз продаж в Японии: **{prediction:.2f} млн копий**")
+    st.success(f"### Прогноз продаж в Японии: {prediction:.2f} млн копий")
     
     st.info(f"""
     **Информация о модели:**
-    - Доверительный интервал: ±{test_rmse * 1.96:.2f} млн копий
-    - Качество модели (R²): {test_r2:.3f}
+    - Доверительный интервал: +-{test_rmse * 1.96:.2f} млн копий
+    - Качество модели (R2): {test_r2:.3f}
     - Модель обучена на {len(y_test)} играх
     """)
     
-    # Сравнение регионов
     fig, ax = plt.subplots(figsize=(8, 5))
     regions = ['Северная Америка', 'Европа', 'Япония (прогноз)', 'Остальной мир']
     values = [pred_na_sales, pred_eu_sales, prediction, pred_other_sales]
@@ -338,7 +301,6 @@ if st.button("🔮 Предсказать продажи в Японии", type=
     ax.set_ylabel('Продажи (млн копий)')
     ax.set_title('Сравнение продаж по регионам')
     
-    # Добавляем значения на столбцы
     for bar, val in zip(bars, values):
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.05,
                 f'{val:.2f}', ha='center', va='bottom', fontsize=10)
@@ -349,7 +311,7 @@ if st.button("🔮 Предсказать продажи в Японии", type=
 # 7. ТОП ИГРЫ
 # ============================================================
 st.markdown("---")
-st.header("🏆 Топ-20 самых продаваемых игр")
+st.header("Топ-20 самых продаваемых игр")
 
 top_games = filtered_df.nlargest(20, 'Global_Sales')[
     ['Name', 'Platform', 'Year', 'Genre', 'Publisher', 'Global_Sales', 'JP_Sales']
@@ -361,14 +323,14 @@ st.dataframe(top_games, use_container_width=True)
 # 8. ЭКСПОРТ ДАННЫХ
 # ============================================================
 st.markdown("---")
-st.header("💾 Экспорт данных")
+st.header("Экспорт данных")
 
 export_format = st.selectbox("Формат экспорта", ["CSV", "Excel", "JSON"])
 
 all_columns = filtered_df.columns.tolist()
 selected_columns = st.multiselect("Выберите колонки для экспорта", all_columns, default=['Name', 'Platform', 'Year', 'Genre', 'Global_Sales', 'JP_Sales'])
 
-if st.button("📥 Скачать отфильтрованные данные"):
+if st.button("Скачать отфильтрованные данные"):
     export_df = filtered_df[selected_columns] if selected_columns else filtered_df
     
     if export_format == "CSV":
@@ -388,12 +350,12 @@ if st.button("📥 Скачать отфильтрованные данные"):
 # 9. О ПРИЛОЖЕНИИ
 # ============================================================
 st.markdown("---")
-with st.expander("ℹ️ О приложении"):
+with st.expander("О приложении"):
     st.markdown("""
     **Анализ и предсказание продаж видеоигр**
     
     **Что мы предсказываем:**
-    - **Целевая переменная:** JP_Sales (продажи в Японии в млн копий)
+    - Целевая переменная: JP_Sales (продажи в Японии в млн копий)
     
     **Почему Япония:** Японский рынок уникален - здесь RPG игры и Nintendo популярнее,
     чем в других регионах. Это делает задачу интересной и реалистичной.
@@ -408,11 +370,11 @@ with st.expander("ℹ️ О приложении"):
     - Продажи в остальном мире (Other_Sales)
     
     **Модели машинного обучения:**
-    - Random Forest (рекомендуется) - учитывает нелинейные зависимости
+    - Random Forest - учитывает нелинейные зависимости
     - Linear Regression - линейная модель для сравнения
     
     **Метрики качества:**
-    - R² (коэффициент детерминации) - чем ближе к 1, тем лучше
+    - R2 (коэффициент детерминации) - чем ближе к 1, тем лучше
     - RMSE (среднеквадратичная ошибка) - в млн копий
     - MAE (средняя абсолютная ошибка) - в млн копий
     
@@ -420,4 +382,4 @@ with st.expander("ℹ️ О приложении"):
     """)
 
 st.markdown("---")
-st.caption("🎮 Панель управления создана с помощью Streamlit | Предсказание продаж в Японии | Данные по видеоиграм")
+st.caption("Панель управления создана с помощью Streamlit | Предсказание продаж в Японии | Данные по видеоиграм")
